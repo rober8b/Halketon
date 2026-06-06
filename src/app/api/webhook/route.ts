@@ -11,29 +11,63 @@ const verifySchema = z.object({
   'hub.challenge': z.string(),
 });
 
-// Schema del payload de mensaje entrante
-const incomingMessageSchema = z.object({
-  object: z.string(),
-  entry: z.array(
-    z.object({
-      changes: z.array(
-        z.object({
-          value: z.object({
-            messages: z
-              .array(
-                z.object({
-                  from: z.string(),
-                  type: z.string(),
-                  text: z.object({ body: z.string() }).optional(),
-                })
-              )
-              .optional(),
-          }),
-        })
-      ),
-    })
-  ),
-});
+// Estructura tolerante: aceptamos tanto el formato crudo de Meta como el de
+// Kapso (kind=kapso, v2). Campos opcionales para navegar con optional chaining.
+interface LooseText {
+  body?: string;
+}
+interface LooseMessage {
+  from?: string;
+  type?: string;
+  text?: LooseText;
+}
+interface LooseChange {
+  value?: { messages?: LooseMessage[] };
+}
+interface LooseEntry {
+  changes?: LooseChange[];
+}
+interface LooseBody {
+  message?: LooseMessage;
+  messages?: LooseMessage[];
+  data?: { message?: LooseMessage; messages?: LooseMessage[] };
+  entry?: LooseEntry[];
+}
+
+// Extrae { from, text } de cualquiera de los formatos soportados.
+function extractMessages(body: unknown): { from: string; text: string }[] {
+  const out: { from: string; text: string }[] = [];
+  if (!body || typeof body !== 'object') return out;
+  const b = body as LooseBody;
+
+  const push = (m?: LooseMessage) => {
+    if (m?.from && m.text?.body) {
+      out.push({ from: String(m.from), text: String(m.text.body) });
+    }
+  };
+
+  // Formato Kapso v2: { message } o { data: { message } } (+ variantes con array)
+  push(b.message);
+  push(b.data?.message);
+  for (const m of b.messages ?? []) push(m);
+  for (const m of b.data?.messages ?? []) push(m);
+
+  // Formato Meta (passthrough)
+  for (const entry of b.entry ?? []) {
+    for (const change of entry.changes ?? []) {
+      for (const m of change.value?.messages ?? []) push(m);
+    }
+  }
+
+  // Dedupe por from+text (evita procesar el mismo mensaje dos veces)
+  const seen = new Set<string>();
+  return out.filter((m) => {
+    const key = `${m.from}|${m.text}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 
 // GET — verificación del webhook de Meta/Kapso
 export async function GET(request: NextRequest) {
@@ -62,56 +96,43 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Body inválido' }, { status: 400 });
   }
 
-  const parsed = incomingMessageSchema.safeParse(body);
-  if (!parsed.success) {
-    // Siempre responder 200 a Meta para evitar reintentos
+  const incoming = extractMessages(body);
+  if (incoming.length === 0) {
+    // Eventos sin mensajes de texto (delivery, read, etc.) — responder 200 e ignorar.
     return NextResponse.json({ status: 'ignored' }, { status: 200 });
   }
 
-  // Procesamos en background para no bloquear la respuesta a Meta
-  const processPromise = (async () => {
-    const client = getWhatsAppClient();
+  const client = getWhatsAppClient();
 
-    for (const entry of parsed.data.entry) {
-      for (const change of entry.changes) {
-        const messages = change.value.messages ?? [];
-        for (const msg of messages) {
-          if (msg.type !== 'text' || !msg.text?.body) continue;
+  for (const { from: phoneNumber, text: rawText } of incoming) {
+    const text = rawText.trim();
+    if (!text) continue;
 
-          const phoneNumber = msg.from;
-          const text = msg.text.body.trim();
+    try {
+      // Comandos especiales primero
+      const specialReply = await handleSpecialCommands(phoneNumber, text);
+      const replyText = specialReply ?? (await processMessage(phoneNumber, text));
 
-          try {
-            // Comandos especiales primero
-            const specialReply = await handleSpecialCommands(phoneNumber, text);
-            const replyText = specialReply ?? (await processMessage(phoneNumber, text));
-
-            if (replyText) {
-              await client.messages.sendText({
-                phoneNumberId: PHONE_NUMBER_ID,
-                to: phoneNumber,
-                body: replyText,
-              });
-            }
-          } catch (err) {
-            console.error(`[webhook] Error procesando mensaje de ${phoneNumber}:`, err);
-            try {
-              await client.messages.sendText({
-                phoneNumberId: PHONE_NUMBER_ID,
-                to: phoneNumber,
-                body: '😕 Ocurrió un error. Escribí "reiniciar" para intentarlo de nuevo.',
-              });
-            } catch {
-              // Si falla el envío del error, nada más podemos hacer
-            }
-          }
-        }
+      if (replyText) {
+        await client.messages.sendText({
+          phoneNumberId: PHONE_NUMBER_ID,
+          to: phoneNumber,
+          body: replyText,
+        });
+      }
+    } catch (err) {
+      console.error(`[webhook] Error procesando mensaje de ${phoneNumber}:`, err);
+      try {
+        await client.messages.sendText({
+          phoneNumberId: PHONE_NUMBER_ID,
+          to: phoneNumber,
+          body: '😕 Ocurrió un error. Escribí "reiniciar" para intentarlo de nuevo.',
+        });
+      } catch {
+        // Si falla el envío del error, nada más podemos hacer
       }
     }
-  })();
-
-  // Esperamos el procesamiento (Vercel no ejecuta after-response sin wrapping especial)
-  await processPromise;
+  }
 
   return NextResponse.json({ status: 'ok' }, { status: 200 });
 }

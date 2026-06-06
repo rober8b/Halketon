@@ -42,6 +42,7 @@ export interface Campaign {
   impact_per_amount: Record<string, string>;
   og_image_url: string | null;
   cover_image_url?: string | null;
+  images?: string[] | null;
   milestones: Milestone[];
   content_assets: ContentAsset[];
   created_at: string;
