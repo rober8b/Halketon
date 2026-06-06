@@ -44,7 +44,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Parámetros inválidos' }, { status: 400 });
   }
 
-  const verifyToken = process.env.WEBHOOK_VERIFY_TOKEN ?? 'en-masa-social';
+  const verifyToken =
+    (process.env.WEBHOOK_VERIFY_TOKEN ?? '').replace(/^﻿/, '').trim() || 'en-masa-social';
   if (parsed.data['hub.verify_token'] !== verifyToken) {
     return NextResponse.json({ error: 'Token inválido' }, { status: 403 });
   }
