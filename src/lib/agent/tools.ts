@@ -38,6 +38,9 @@ export async function createCampaignWithAssets(
 ): Promise<{ campaignId: string; slug: string }> {
   const slug = generateSlug(generated.title, data.ong_name ?? 'ong');
 
+  const appUrl = process.env.APP_URL ?? 'http://localhost:4000';
+  const ogImageUrl = `${appUrl}/api/og/${slug}`;
+
   const { data: campaign, error: campaignError } = await supabaseAdmin
     .from('campaigns')
     .insert({
@@ -49,6 +52,7 @@ export async function createCampaignWithAssets(
       goal_amount: data.goal_amount,
       deadline: data.deadline,
       impact_per_amount: generated.impact_per_amount,
+      og_image_url: ogImageUrl,
       status: 'draft',
     })
     .select('id')
