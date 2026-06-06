@@ -41,6 +41,17 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --color-refinance-blue: #4A90E2;
+  --color-terracotta-50: #FDF8F6;
+  --color-terracotta-100: #F2E8E5;
+  --color-terracotta-200: #EADDCA;
+  --color-terracotta-300: #E0C3A7;
+  --color-terracotta-400: #D4A574;
+  --color-terracotta-500: #C68E5A;
+  --color-terracotta-600: #B76E3F;
+  --color-terracotta-700: #8B5A3F;
+  --color-terracotta-800: #6F4E37;
+  --color-terracotta-900: #5A3E2E;
 }
 
 :root,
