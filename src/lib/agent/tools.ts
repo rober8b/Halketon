@@ -11,7 +11,9 @@ function generateSlug(title: string, ongName: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
     .slice(0, 60);
-  return `${base}-${Date.now().toString(36)}`;
+  const ts = Date.now().toString(36);
+  const rand = Math.random().toString(36).slice(2, 6);
+  return `${base}-${ts}${rand}`;
 }
 
 export async function upsertOng(

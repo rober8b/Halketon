@@ -9,7 +9,9 @@ try {
   const forcedModeAttr = document.documentElement.getAttribute('data-force-mode');
   const forcedMode = forcedModeAttr === 'light' || forcedModeAttr === 'dark' ? forcedModeAttr : null;
   const legacyMode = legacyTheme === 'kapso' ? 'dark' : legacyTheme === 'normal' ? 'light' : null;
-  const mode = forcedMode || (allowedModes[storedMode] ? storedMode : legacyMode || 'dark');
+  // El inbox del agente siempre arranca en light, sin importar lo que tenga el storage.
+  const isInbox = window.location.pathname === '/inbox' || window.location.pathname.startsWith('/inbox/');
+  const mode = forcedMode || (isInbox ? 'light' : (allowedModes[storedMode] ? storedMode : legacyMode || 'dark'));
   const resolvedMode = !forcedMode && mode === 'system'
     ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
     : mode;
@@ -42,8 +44,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "WhatsApp inbox",
-  description: "A simple WhatsApp inbox built with Next.js",
+  title: "Refinance — Campañas de donación que viven en WhatsApp",
+  description:
+    "Plataforma para ONGs argentinas: agente IA en WhatsApp, kit viral generado, fondos en escrow on-chain con liberación por hitos.",
 };
 
 export default function RootLayout({

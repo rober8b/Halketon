@@ -11,6 +11,7 @@
 out/
 build/
 dist/
+tsconfig.tsbuildinfo
 
 # Node
 node_modules/

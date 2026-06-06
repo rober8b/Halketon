@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ArrowRight, LayoutDashboard, Megaphone, ShieldCheck } from 'lucide-react';
+import { RefinanceLogo } from '@/components/refinance-logo';
 
 export default function DashboardLayout({
   children,
@@ -7,12 +8,12 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="min-h-dvh bg-[linear-gradient(180deg,hsl(20_14.3%_4.1%)_0%,hsl(24_9.8%_10%)_100%)] text-foreground">
+    <div className="light-surface min-h-dvh bg-[linear-gradient(180deg,hsl(210_20%_98%)_0%,hsl(0_0%_100%)_100%)] text-foreground">
       <div className="mx-auto flex min-h-dvh w-full max-w-7xl">
         <aside className="hidden w-72 shrink-0 flex-col border-r border-border bg-card/70 px-5 py-6 lg:flex">
           <Link href="/dashboard" className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-refinance-blue text-sm font-semibold text-white">
-              EM
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-white">
+              <RefinanceLogo className="h-7 w-7" />
             </div>
             <div>
               <p className="text-sm font-semibold leading-5 text-foreground">Dashboard ONG</p>
@@ -48,8 +49,8 @@ export default function DashboardLayout({
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="flex items-center justify-between gap-4 border-b border-border bg-card/60 px-4 py-4 sm:px-6 lg:px-8">
             <Link href="/dashboard" className="flex items-center gap-3 lg:hidden">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-refinance-blue text-sm font-semibold text-white">
-                EM
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-white">
+                <RefinanceLogo className="h-7 w-7" />
               </div>
               <div>
                 <p className="text-sm font-semibold leading-5 text-foreground">Dashboard ONG</p>

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ArrowRight, LayoutDashboard, MessageCircleHeart } from 'lucide-react';
+import { RefinanceLogo } from '@/components/refinance-logo';
 
 export default function PublicLayout({
   children,
@@ -7,17 +8,14 @@ export default function PublicLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="min-h-dvh bg-[linear-gradient(180deg,hsl(210_20%_98%)_0%,hsl(0_0%_100%)_100%)] text-foreground">
+    <div className="light-surface min-h-dvh bg-[linear-gradient(180deg,hsl(210_20%_98%)_0%,hsl(0_0%_100%)_100%)] text-foreground">
       <div className="mx-auto flex min-h-dvh w-full max-w-7xl flex-col px-4 py-4 sm:px-6 lg:px-8">
         <header className="flex items-center justify-between gap-4 border-b border-border pb-4">
           <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-refinance-blue text-sm font-semibold text-white">
-              EM
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-white">
+              <RefinanceLogo className="h-7 w-7" />
             </div>
-            <div>
-              <p className="text-sm font-semibold leading-5 text-foreground">En Masa Social</p>
-              <p className="text-xs text-muted-foreground">Landing y donacion publica</p>
-            </div>
+            <p className="text-sm font-semibold leading-5 text-foreground">Refinance</p>
           </Link>
 
           <div className="flex items-center gap-2">

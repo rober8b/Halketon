@@ -1,6 +1,6 @@
-import type { CollectedData, ContentAssetDraft, MilestoneInput } from './types';
+import type { CollectedData, ContentAssetDraft } from './types';
 
-export const GREETING_PROMPT = `¡Hola! Soy el asistente de *En Masa Social* 🌱
+export const GREETING_PROMPT = `¡Hola! Soy el asistente de *Refinance* 🌱
 
 Te ayudo a crear tu campaña de donación en menos de 5 minutos, sin necesidad de equipo técnico.
 

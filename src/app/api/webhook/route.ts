@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { after } from 'next/server';
 import { z } from 'zod';
 import { processMessage, handleSpecialCommands } from '@/lib/agent/state-machine';
-import { GREETING_PROMPT } from '@/lib/agent/prompts';
 import { getWhatsAppClient, PHONE_NUMBER_ID } from '@/lib/whatsapp-client';
 
 // Schema de verificación de WhatsApp
@@ -22,6 +22,7 @@ const incomingMessageSchema = z.object({
             messages: z
               .array(
                 z.object({
+                  id: z.string(),
                   from: z.string(),
                   type: z.string(),
                   text: z.object({ body: z.string() }).optional(),
@@ -34,6 +35,21 @@ const incomingMessageSchema = z.object({
     })
   ),
 });
+
+// Dedupe in-memory de message IDs. Vercel/Meta pueden reintentar el webhook;
+// si el mismo ID ya fue procesado, lo ignoramos.
+const PROCESSED_TTL_MS = 10 * 60 * 1000;
+const processedMessages = new Map<string, number>();
+
+function alreadyProcessed(messageId: string): boolean {
+  const now = Date.now();
+  for (const [id, ts] of processedMessages) {
+    if (now - ts > PROCESSED_TTL_MS) processedMessages.delete(id);
+  }
+  if (processedMessages.has(messageId)) return true;
+  processedMessages.set(messageId, now);
+  return false;
+}
 
 // GET — verificación del webhook de Meta/Kapso
 export async function GET(request: NextRequest) {
@@ -67,8 +83,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ status: 'ignored' }, { status: 200 });
   }
 
-  // Procesamos en background para no bloquear la respuesta a Meta
-  const processPromise = (async () => {
+  // Procesamos después de responder para no bloquear el webhook y evitar reintentos
+  after(async () => {
     const client = getWhatsAppClient();
 
     for (const entry of parsed.data.entry) {
@@ -76,16 +92,20 @@ export async function POST(request: NextRequest) {
         const messages = change.value.messages ?? [];
         for (const msg of messages) {
           if (msg.type !== 'text' || !msg.text?.body) continue;
+          if (alreadyProcessed(msg.id)) {
+            console.log(`[webhook] Mensaje duplicado ignorado: ${msg.id}`);
+            continue;
+          }
 
           const phoneNumber = msg.from;
           const text = msg.text.body.trim();
 
           try {
-            // Comandos especiales primero
-            const specialReply = await handleSpecialCommands(phoneNumber, text);
-            const replyText = specialReply ?? (await processMessage(phoneNumber, text));
+            const specialReplies = await handleSpecialCommands(phoneNumber, text);
+            const replies = specialReplies ?? (await processMessage(phoneNumber, text));
 
-            if (replyText) {
+            for (const replyText of replies) {
+              if (!replyText) continue;
               await client.messages.sendText({
                 phoneNumberId: PHONE_NUMBER_ID,
                 to: phoneNumber,
@@ -107,10 +127,7 @@ export async function POST(request: NextRequest) {
         }
       }
     }
-  })();
-
-  // Esperamos el procesamiento (Vercel no ejecuta after-response sin wrapping especial)
-  await processPromise;
+  });
 
   return NextResponse.json({ status: 'ok' }, { status: 200 });
 }

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createDonation } from '@/lib/donations/processor';
+import { isSupabaseConfigured } from '@/lib/supabase/client';
 
 const donateSchema = z.object({
-  campaign_id: z.string().uuid(),
+  campaign_id: z.string().min(1),
   amount: z.number().int().positive(),
   frequency: z.enum(['one_time', 'monthly']).default('one_time'),
   donor_name: z.string().min(2).max(100),
@@ -25,6 +26,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { error: 'Datos inválidos', details: parsed.error.flatten().fieldErrors },
       { status: 422 }
+    );
+  }
+
+  // Fallback de simulación sin Supabase: permite el flujo end-to-end del form
+  // contra campañas mock cuando no hay credenciales reales.
+  if (!isSupabaseConfigured()) {
+    return NextResponse.json(
+      {
+        donation_id: `sim_${Date.now()}`,
+        status: 'confirmed',
+        simulated: true,
+      },
+      { status: 201 }
     );
   }
 
