@@ -1,6 +1,12 @@
-export type CampaignStatus = 'draft' | 'active' | 'completed';
-export type MilestoneStatus = 'pending' | 'completed';
-export type ContentChannel = 'whatsapp' | 'instagram' | 'twitter' | 'facebook';
+export type CampaignStatus = 'draft' | 'active' | 'completed' | 'paused';
+export type MilestoneStatus = 'pending' | 'completed' | 'reached' | 'validated';
+export type ContentChannel =
+  | 'whatsapp'
+  | 'instagram'
+  | 'twitter'
+  | 'facebook'
+  | 'linkedin'
+  | 'email';
 
 export interface Milestone {
   id: string;
@@ -18,6 +24,7 @@ export interface ContentAsset {
   channel: ContentChannel;
   audience: string;
   content: string;
+  version?: number;
 }
 
 export interface Campaign {
@@ -39,21 +46,38 @@ export interface Campaign {
   created_at: string;
 }
 
-export interface CampaignPublic
-  extends Pick<
-    Campaign,
-    | 'id'
-    | 'slug'
-    | 'title'
-    | 'cause'
-    | 'description'
-    | 'goal_amount'
-    | 'total_raised'
-    | 'donors_count'
-    | 'min_donation'
-    | 'deadline'
-    | 'status'
-    | 'impact_per_amount'
-    | 'og_image_url'
-    | 'milestones'
-  > {}
+export type CampaignPublic = Pick<
+  Campaign,
+  | 'id'
+  | 'slug'
+  | 'title'
+  | 'cause'
+  | 'description'
+  | 'goal_amount'
+  | 'total_raised'
+  | 'donors_count'
+  | 'min_donation'
+  | 'deadline'
+  | 'status'
+  | 'impact_per_amount'
+  | 'og_image_url'
+  | 'milestones'
+>;
+
+export interface CampaignPromoter {
+  id: string;
+  name: string;
+  type: 'volunteer' | 'partner' | 'staff';
+  referral_code: string;
+  clicks: number;
+  donations: number;
+  total_raised: number;
+}
+
+export interface CampaignWithRelations extends Campaign {
+  promoters: CampaignPromoter[];
+  lead_contact: string;
+  location: string;
+  summary: string;
+  updated_at: string;
+}
