@@ -91,7 +91,7 @@ export async function processMessage(
   phoneNumber: string,
   incomingText: string
 ): Promise<string> {
-  let state = await loadConversationState(phoneNumber);
+  const state = await loadConversationState(phoneNumber);
   let reply = '';
 
   try {
