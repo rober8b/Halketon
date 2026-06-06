@@ -147,3 +147,90 @@ Actualizar el estado a ✅ cuando termines cada WB.
 |---|---|
 | **Rober** | Full-stack, WhatsApp, IA, Frontend |
 | **Leo** | DeFi, Blockchain, Stellar |
+
+---
+
+## Stellar Smoke Test y proofs
+
+### Estado actual
+
+- Wallet testnet creada y fondeada:
+  `GAF5X2HJDLINJXWY77T6D3NM6VBZKYXCVT2CHMCB5PBI6SADSABUYSRY`
+- Funding proof en Stellar Explorer:
+  [tx friendbot](https://stellar.expert/explorer/testnet/tx/b2f21a49e436cafd67ea3760160ddd916d8648cea79c9050a7607e0e358bca5c)
+- Contract explorer usado para smoke test de lectura:
+  [contract fallback](https://stellar.expert/explorer/testnet/contract/CA2A624HHQVMBQUBA3ZPSZ6L3BOIYIQQHICJ26DJRCHAOL7TT2T226SQ)
+
+### Smoke test
+
+El smoke test actual valida dos cosas:
+
+1. La cuenta admin local tiene fondos en Stellar testnet.
+2. La libreria `src/lib/stellar/` puede consultar el contrato fallback y resolver `getCampaign('test-campaign')` con `null` en lugar de romper.
+
+Ejecutar:
+
+```bash
+npx tsx scripts/smoke-test-stellar.ts
+```
+
+Salida esperada:
+
+```json
+{
+  "smokeTest": "ok",
+  "readOnlyContractCheck": null
+}
+```
+
+### Mock de escrow
+
+Para la demo dejamos un ejemplo de escrow vinculado al `contractId` actual en:
+
+- `src/lib/stellar/mock-escrow.ts`
+
+Ese mock representa:
+
+- `stellarCampaignId`: `demo-comedor-esperanza`
+- `escrowXlm`: `2500.0000000`
+- milestone 1 pendiente de validacion con `proofId`: `proof-demo-001`
+- milestone 2 en cola
+
+La intencion es mostrar el estado esperado del contrato aunque el deploy propio del equipo siga pendiente por la instalacion de `stellar-cli`.
+
+### Ruteo de fondos: Blend vs Aave
+
+#### Opcion recomendada: Blend
+
+Blend corre nativamente sobre Stellar. Para una demo realista, la secuencia mas limpia seria:
+
+1. validar milestone en el contrato escrow
+2. retirar fondos liberados
+3. depositarlos en un pool de Blend sin bridge intermedio
+
+Eso evita complejidad cross-chain y mantiene toda la trazabilidad en Stellar.
+
+#### Opcion alternativa: Aave via Allbridge Core
+
+Si se quisiera usar Aave, la ruta correcta no es directa desde Stellar:
+
+1. retirar del escrow
+2. convertir el retiro a `USDC` en Stellar
+3. cruzar `USDC` con Allbridge Core hacia una red EVM
+4. depositar ese `USDC` bridged en Aave
+
+Para la demo actual esto queda documentado como flujo tecnico, no como smoke test ejecutado, porque requiere:
+
+- contrato escrow propio deployado con admin del equipo
+- liquidez real o entorno bridge utilizable
+- cuenta destino en una red soportada por Aave
+
+### Limitacion abierta
+
+No hubo deploy real del contrato propio del equipo en esta maquina porque `cargo install --locked stellar-cli@23.0.0` fallo por TLS/revocation contra `crates.io`.
+
+Hasta resolver eso, el repo usa:
+
+- wallet propia del equipo en testnet
+- `STELLAR_TOKEN_ID` nativo correcto
+- `STELLAR_CONTRACT_ID` fallback documentado en `LEO_WB01_contract-deploy.md`
