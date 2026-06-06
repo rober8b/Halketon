@@ -4,7 +4,7 @@ let _client: GoogleGenerativeAI | null = null;
 
 function getClient(): GoogleGenerativeAI {
   if (!_client) {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = (process.env.GEMINI_API_KEY ?? '').replace(/^﻿/, '').trim();
     if (!apiKey) throw new Error('GEMINI_API_KEY no está configurada');
     _client = new GoogleGenerativeAI(apiKey);
   }

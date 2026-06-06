@@ -19,7 +19,12 @@ import {
   loadConversationState,
 } from './tools';
 
-const APP_URL = process.env.APP_URL ?? 'http://localhost:4000';
+// Limpia BOM (U+FEFF) y espacios de env vars (CLI de Windows a veces agrega BOM).
+function cleanEnv(value: string | undefined): string {
+  return (value ?? '').replace(/^﻿/, '').trim();
+}
+
+const APP_URL = cleanEnv(process.env.APP_URL) || 'http://localhost:4000';
 
 function campaignUrl(slug: string): string {
   return `${APP_URL}/c/${slug}`;
@@ -91,7 +96,7 @@ function isConfirmation(text: string): boolean {
 // Con DEMO_MODE=true la generación es instantánea: NO llama a Gemini ni escribe
 // en la base. Devuelve una campaña pre-generada y apunta al showcase ya cargado.
 // Esto hace el pitch en vivo 100% determinístico y rápido.
-const DEMO_MODE = process.env.DEMO_MODE === 'true';
+const DEMO_MODE = cleanEnv(process.env.DEMO_MODE) === 'true';
 const DEMO_SHOWCASE_SLUG = 'comedor-esperanza';
 
 function buildDemoCampaign(data: CollectedData): GeneratedCampaign {
