@@ -40,6 +40,11 @@ export async function generateMetadata({ params }: Pick<PageProps, 'params'>) {
   return {
     title: campaign?.title ?? 'Campana de donacion',
     description: campaign?.description ?? 'Landing publica de campana.',
+    openGraph: {
+      title: campaign?.title,
+      description: campaign?.description,
+      images: campaign?.og_image_url ? [campaign.og_image_url] : [],
+    },
   };
 }
 
@@ -63,6 +68,17 @@ export default async function CampaignLanding({ params, searchParams }: PageProp
 
   return (
     <div className="space-y-10 py-8">
+      {campaign.cover_image_url ? (
+        <section className="overflow-hidden rounded-2xl border border-border shadow-sm">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={campaign.cover_image_url}
+            alt={campaign.title}
+            className="h-56 w-full object-cover sm:h-72 lg:h-80"
+          />
+        </section>
+      ) : null}
+
       <section className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
         <div className="space-y-6">
           <div className="flex flex-wrap items-center gap-2">

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600" fill="none" role="img" aria-label="Huerta Viva">
+  <defs>
+    <linearGradient id="bgh" x1="0" y1="0" x2="1200" y2="600" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3F8E5B"/>
+      <stop offset="0.55" stop-color="#2F7D4A"/>
+      <stop offset="1" stop-color="#1F5E36"/>
+    </linearGradient>
+    <radialGradient id="sunh" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFF3B0"/>
+      <stop offset="1" stop-color="#F5D76E"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="600" fill="url(#bgh)"/>
+  <circle cx="970" cy="140" r="110" fill="url(#sunh)" opacity="0.9"/>
+  <g opacity="0.12" fill="#FFFFFF">
+    <circle cx="140" cy="520" r="220"/>
+    <circle cx="1060" cy="540" r="150"/>
+  </g>
+  <!-- plant -->
+  <g transform="translate(600 420)">
+    <ellipse cx="0" cy="90" rx="200" ry="30" fill="#000000" opacity="0.15"/>
+    <rect x="-90" y="20" width="180" height="90" rx="14" fill="#7B4B2A"/>
+    <rect x="-90" y="20" width="180" height="22" rx="11" fill="#8C5A36"/>
+    <path d="M0 20 C 0 -40 0 -90 0 -150" stroke="#A7E2B8" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <path d="M0 -40 C -60 -50 -90 -110 -70 -150 C -20 -140 5 -90 0 -40 Z" fill="#9BE0AE"/>
+    <path d="M0 -70 C 60 -80 95 -140 75 -180 C 25 -168 -2 -118 0 -70 Z" fill="#BFEFCB"/>
+    <path d="M0 -120 C -45 -130 -70 -180 -55 -212 C -15 -200 4 -160 0 -120 Z" fill="#9BE0AE"/>
+  </g>
+  <!-- text -->
+  <g font-family="Segoe UI, Helvetica, Arial, sans-serif">
+    <rect x="80" y="70" width="220" height="44" rx="22" fill="#FFFFFF" opacity="0.18"/>
+    <text x="104" y="100" fill="#FFFFFF" font-size="22" font-weight="700" letter-spacing="2">EN MASA SOCIAL</text>
+    <text x="80" y="200" fill="#FFFFFF" font-size="72" font-weight="800">Huerta Viva</text>
+    <text x="82" y="252" fill="#E4F6E9" font-size="30" font-weight="500">Sembrar comunidad, cosechar futuro</text>
+  </g>
+</svg>

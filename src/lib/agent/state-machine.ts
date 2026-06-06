@@ -87,6 +87,96 @@ function isConfirmation(text: string): boolean {
   );
 }
 
+// === Modo DEMO ===
+// Con DEMO_MODE=true la generación es instantánea: NO llama a Gemini ni escribe
+// en la base. Devuelve una campaña pre-generada y apunta al showcase ya cargado.
+// Esto hace el pitch en vivo 100% determinístico y rápido.
+const DEMO_MODE = process.env.DEMO_MODE === 'true';
+const DEMO_SHOWCASE_SLUG = 'comedor-esperanza';
+
+function buildDemoCampaign(data: CollectedData): GeneratedCampaign {
+  const ong = data.ong_name ?? 'tu organización';
+  return {
+    title: 'Comedor Esperanza: una mesa llena para el barrio',
+    description:
+      `${ong} abre un comedor para que ningún chico del barrio empiece ni termine ` +
+      `la escuela con hambre. Con tu aporte garantizamos desayuno y merienda diaria ` +
+      `para 80 chicos, compramos equipamiento de cocina y sostenemos la compra de ` +
+      `alimentos todo el año. Cada hito se libera con evidencia pública y los fondos ` +
+      `quedan en escrow on-chain: transparencia total, del primer peso al último.`,
+    impact_per_amount: {
+      '10000': 'Un almuerzo completo para una familia.',
+      '30000': 'Tres viandas y frutas para un fin de semana.',
+      '60000': 'Compra semanal de mercadería básica.',
+    },
+    content_assets: [
+      {
+        channel: 'whatsapp',
+        audience: 'amigos y familia',
+        content:
+          '🍲 Estoy ayudando al Comedor Esperanza. Con $10.000 ya cubrís un almuerzo ' +
+          'completo para una familia. Sumate acá 👉',
+      },
+      {
+        channel: 'instagram',
+        audience: 'seguidores generales',
+        content:
+          'Hoy una mesa llena cambia la semana de un barrio entero 🧡 Comedor Esperanza ' +
+          'necesita tu apoyo. #EnMasaSocial #Solidaridad #Argentina',
+      },
+      {
+        channel: 'twitter',
+        audience: 'público general',
+        content:
+          '80 chicos, una mesa, una comunidad. Ayudá al Comedor Esperanza a sostener ' +
+          'desayuno y merienda todo el año. #EnMasaSocial #Donar',
+      },
+    ],
+  };
+}
+
+// Genera la campaña y deja el estado en 'confirming'. Reutilizable para el primer
+// intento (desde collect_milestones) y para reintentos (paso 'generating').
+async function runCampaignGeneration(
+  state: AgentState,
+  phoneNumber: string
+): Promise<string> {
+  let slug: string;
+
+  if (DEMO_MODE) {
+    const generated = buildDemoCampaign(state.collected_data);
+    state.collected_data.title = generated.title;
+    state.collected_data.description = generated.description;
+    state.collected_data.impact_per_amount = generated.impact_per_amount;
+    state.collected_data.content_assets = generated.content_assets;
+    // No seteamos campaign_id real en demo: la columna es UUID/FK en Supabase.
+    state.campaign_id = null;
+    slug = DEMO_SHOWCASE_SLUG;
+  } else {
+    const prompt = buildCampaignGenerationPrompt(state.collected_data);
+    const generated = await generateJSON<GeneratedCampaign>(prompt);
+
+    state.collected_data.title = generated.title;
+    state.collected_data.description = generated.description;
+    state.collected_data.impact_per_amount = generated.impact_per_amount;
+    state.collected_data.content_assets = generated.content_assets;
+
+    const ongId = await upsertOng(
+      phoneNumber,
+      state.collected_data.ong_name ?? '',
+      state.collected_data.contact_name ?? ''
+    );
+    state.ong_id = ongId;
+
+    const created = await createCampaignWithAssets(ongId, state.collected_data, generated);
+    state.campaign_id = created.campaignId;
+    slug = created.slug;
+  }
+
+  state.current_step = 'confirming';
+  return CAMPAIGN_CONFIRM_PROMPT(state.collected_data, campaignUrl(slug));
+}
+
 export async function processMessage(
   phoneNumber: string,
   incomingText: string
@@ -135,44 +225,28 @@ export async function processMessage(
         }
         state.collected_data.milestones = milestones;
         state.current_step = 'generating';
-        reply = GENERATING_PROMPT();
 
         // Guardamos el estado con 'generating' antes de llamar a Gemini
         await saveConversationState(state);
 
-        // Generamos con Gemini
-        const prompt = buildCampaignGenerationPrompt(state.collected_data);
-        const generated = await generateJSON<GeneratedCampaign>(prompt);
+        reply = await runCampaignGeneration(state, phoneNumber);
+        break;
+      }
 
-        state.collected_data.title = generated.title;
-        state.collected_data.description = generated.description;
-        state.collected_data.impact_per_amount = generated.impact_per_amount;
-        state.collected_data.content_assets = generated.content_assets;
-
-        // Guardamos draft en DB
-        const ongId = await upsertOng(
-          phoneNumber,
-          state.collected_data.ong_name ?? '',
-          state.collected_data.contact_name ?? ''
-        );
-        state.ong_id = ongId;
-
-        const { campaignId, slug } = await createCampaignWithAssets(
-          ongId,
-          state.collected_data,
-          generated
-        );
-        state.campaign_id = campaignId;
-        state.current_step = 'confirming';
-
-        const url = campaignUrl(slug);
-        // reply ya fue enviado como "generando...", enviamos el segundo mensaje
-        reply = CAMPAIGN_CONFIRM_PROMPT(state.collected_data, url);
+      case 'generating': {
+        // Reintento de generación: los datos ya están en collected_data,
+        // el usuario manda cualquier mensaje (ej: "listo") para reintentar.
+        reply = await runCampaignGeneration(state, phoneNumber);
         break;
       }
 
       case 'confirming': {
         if (isConfirmation(incomingText)) {
+          if (DEMO_MODE) {
+            state.current_step = 'done';
+            reply = DONE_PROMPT(campaignUrl(DEMO_SHOWCASE_SLUG));
+            break;
+          }
           if (!state.campaign_id) {
             reply = '⚠️ Hubo un error — no encontré la campaña guardada. Escribí "reiniciar" para empezar de nuevo.';
             break;
@@ -218,8 +292,14 @@ export async function processMessage(
     }
   } catch (err) {
     console.error('[agent] Error en step', state.current_step, err);
-    state.current_step = 'error';
-    reply = '😕 Ocurrió un error inesperado. Escribí "reiniciar" para intentarlo de nuevo.';
+    if (state.current_step === 'generating') {
+      // No perdemos los datos recopilados: el usuario reintenta con "listo".
+      reply =
+        '⏳ Estamos con mucha demanda generando tu campaña. Escribí *listo* para reintentar en unos segundos.';
+    } else {
+      state.current_step = 'error';
+      reply = '😕 Ocurrió un error inesperado. Escribí "reiniciar" para intentarlo de nuevo.';
+    }
   }
 
   await saveConversationState(state);

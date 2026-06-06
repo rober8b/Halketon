@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600" fill="none" role="img" aria-label="Comedor Esperanza">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="600" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#B76E3F"/>
+      <stop offset="0.55" stop-color="#C0613A"/>
+      <stop offset="1" stop-color="#8B5A3F"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFE2C2"/>
+      <stop offset="1" stop-color="#F6B98A"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="600" fill="url(#bg)"/>
+  <circle cx="960" cy="150" r="120" fill="url(#sun)" opacity="0.85"/>
+  <g opacity="0.12" fill="#FFFFFF">
+    <circle cx="120" cy="500" r="220"/>
+    <circle cx="1080" cy="520" r="160"/>
+  </g>
+  <!-- bowl -->
+  <g transform="translate(600 360)">
+    <ellipse cx="0" cy="60" rx="210" ry="34" fill="#000000" opacity="0.15"/>
+    <path d="M-180 -10 A180 180 0 0 0 180 -10 Z" fill="#FFF6EC"/>
+    <path d="M-180 -10 A180 180 0 0 0 180 -10" fill="none" stroke="#E9D2BC" stroke-width="6"/>
+    <ellipse cx="0" cy="-10" rx="180" ry="36" fill="#FFEAD3"/>
+    <ellipse cx="0" cy="-10" rx="180" ry="36" fill="none" stroke="#E9D2BC" stroke-width="6"/>
+    <!-- steam -->
+    <g stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" fill="none" opacity="0.8">
+      <path d="M-70 -60 C -90 -100 -50 -120 -70 -160"/>
+      <path d="M0 -70 C -20 -110 20 -130 0 -170"/>
+      <path d="M70 -60 C 50 -100 90 -120 70 -160"/>
+    </g>
+  </g>
+  <!-- text -->
+  <g font-family="Segoe UI, Helvetica, Arial, sans-serif">
+    <rect x="80" y="70" width="220" height="44" rx="22" fill="#FFFFFF" opacity="0.18"/>
+    <text x="104" y="100" fill="#FFFFFF" font-size="22" font-weight="700" letter-spacing="2">EN MASA SOCIAL</text>
+    <text x="80" y="200" fill="#FFFFFF" font-size="72" font-weight="800">Comedor Esperanza</text>
+    <text x="82" y="252" fill="#FFE8D6" font-size="30" font-weight="500">Una mesa llena para el barrio</text>
+  </g>
+</svg>

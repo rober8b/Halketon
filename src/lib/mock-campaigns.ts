@@ -20,7 +20,8 @@ const mockCampaigns: CampaignWithRelations[] = [
       '60000': 'Compra semanal de mercaderia basica.',
       '120000': 'Cobertura de una jornada comunitaria entera.',
     },
-    og_image_url: null,
+    og_image_url: '/campaigns/comedor-esperanza.svg',
+    cover_image_url: '/campaigns/comedor-esperanza.svg',
     milestones: [
       {
         id: 'mil_001',
@@ -142,7 +143,8 @@ const mockCampaigns: CampaignWithRelations[] = [
       '50000': 'Capacitacion de un grupo de voluntarios.',
       '100000': 'Compra de materiales para ampliar canteros.',
     },
-    og_image_url: null,
+    og_image_url: '/campaigns/huerta-viva.svg',
+    cover_image_url: '/campaigns/huerta-viva.svg',
     milestones: [
       {
         id: 'mil_101',
