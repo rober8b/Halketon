@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase/client';
 import type { AgentState, CollectedData, MilestoneInput } from './types';
 import type { GeneratedCampaign } from './prompts';
+import { createCampaignOnChain } from '@/lib/stellar/contract';
 
 function generateSlug(title: string, ongName: string): string {
   const base = `${ongName}-${title}`
@@ -131,9 +132,37 @@ export async function loadConversationState(phoneNumber: string): Promise<AgentS
 }
 
 export async function publishCampaign(campaignId: string): Promise<void> {
+  // Obtener datos para el contrato
+  const { data: campaign } = await supabaseAdmin
+    .from('campaigns')
+    .select('title, goal_amount, deadline')
+    .eq('id', campaignId)
+    .single();
+
+  let stellarCampaignId: string | null = null;
+
+  if (campaign) {
+    try {
+      const deadlineTs = campaign.deadline
+        ? Math.floor(new Date(campaign.deadline).getTime() / 1000)
+        : Math.floor(Date.now() / 1000) + 90 * 24 * 3600;
+
+      const result = await createCampaignOnChain({
+        title: campaign.title,
+        goalAmount: campaign.goal_amount,
+        deadlineTimestamp: deadlineTs,
+      });
+      stellarCampaignId = result.stellarCampaignId || null;
+    } catch (err) {
+      // No bloqueamos la publicación si Stellar falla
+      console.error('[stellar] Error al crear campaña on-chain:', err);
+    }
+  }
+
   const { error } = await supabaseAdmin
     .from('campaigns')
-    .update({ status: 'active' })
+    .update({ status: 'active', stellar_campaign_id: stellarCampaignId })
     .eq('id', campaignId);
+
   if (error) throw new Error(`Error al publicar campaña: ${error.message}`);
 }
